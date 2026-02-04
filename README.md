@@ -71,7 +71,7 @@ This project is licensed under the MIT License.
 
 ## 📞 Contact
 
-- **Author**: Advic Tech
-- **Email**: developer@advic.io
+- **Author**: Deven Bhimani
+- **Email**: devenbhimani@gmail.com
 - **Issues**: Report bugs or suggestions on the GitHub Issues page.
 
