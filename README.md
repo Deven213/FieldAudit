@@ -4,24 +4,24 @@ A modern Power Apps Component Framework (PCF) control that provides instant visi
 
 ## 🚀 Features
 
-- **Inline History Access**: View field changes without leaving the record or opening the global Audit History.
-- **Detailed Audit Info**: Displays the last 5 changes including User, Timestamp, Operation (Create/Update), and the specific Old/New values.
-- **Smart Parsing**: Automatically handles both JSON and XML `changedata` formats from Dataverse.
-- **Metadata Aware**: Resolves OptionSet and TwoOptions values to their display labels for better readability.
-- **Premium UI**: Built with Fluent UI, featuring a sleek, blurred callout (glassmorphism) and smooth transitions.
-- **Interactive**: Hover effects and easy-to-read activity items.
+* **Inline History Access**: View field changes without leaving the record or opening the global Audit History.
+* **Detailed Audit Info**: Displays the last 5 changes including User, Timestamp, Operation (Create/Update), and the specific Old/New values.
+* **Smart Parsing**: Automatically handles both JSON and XML `changedata` formats from Dataverse.
+* **Metadata Aware**: Resolves OptionSet and TwoOptions values to their display labels for better readability.
+* **Premium UI**: Built with Fluent UI, featuring a sleek, blurred callout (glassmorphism) and smooth transitions.
+* **Interactive**: Hover effects and easy-to-read activity items.
 
 ## 🛠️ Technology Stack
 
-- **Framework**: Power Apps Component Framework (PCF)
-- **Library**: React
-- **Styling**: Fluent UI (@fluentui/react)
-- **Language**: TypeScript
+* **Framework**: Power Apps Component Framework (PCF)
+* **Library**: React
+* **Styling**: Fluent UI (@fluentui/react)
+* **Language**: TypeScript
 
 ## 📦 Prerequisites
 
-- [Node.js](https://nodejs.org/) (Recommended version: 16.x or 18.x)
-- [Microsoft Power Platform CLI](https://learn.microsoft.com/en-us/power-platform/developer/cli/introduction)
+* [Node.js](https://nodejs.org/) (Recommended version: 16.x or 18.x)
+* [Microsoft Power Platform CLI](https://learn.microsoft.com/en-us/power-platform/developer/cli/introduction)
 
 ## 🏗️ Getting Started
 
@@ -29,6 +29,7 @@ A modern Power Apps Component Framework (PCF) control that provides instant visi
 
 1. Clone the repository or download the source code.
 2. Install dependencies:
+
    ```bash
    npm install
    ```
@@ -36,6 +37,7 @@ A modern Power Apps Component Framework (PCF) control that provides instant visi
 ### Development & Testing
 
 Run the control in the local test harness:
+
 ```bash
 npm start
 ```
@@ -43,6 +45,7 @@ npm start
 ### Building the Control
 
 To build the control for production:
+
 ```bash
 npm run build
 ```
@@ -50,11 +53,13 @@ npm run build
 ## 🛠️ Configuration
 
 ### Manifest Properties
-- **Field Value**: The data-bound field that this control will track and display.
+
+* **Field Value**: The data-bound field that this control will track and display.
 
 ### Features Used
-- **WebAPI**: Required to fetch audit records from the `audit` entity.
-- **Utility**: Used for UI utilities.
+
+* **WebAPI**: Required to fetch audit records from the `audit` entity.
+* **Utility**: Used for UI utilities.
 
 ## 📝 How it Works
 
@@ -71,7 +76,14 @@ This project is licensed under the MIT License.
 
 ## 📞 Contact
 
-- **Author**: Deven Bhimani
-- **Email**: devenbhimani@gmail.com
-- **Issues**: Report bugs or suggestions on the GitHub Issues page.
+* **Author**: Deven Bhimani
+* **Email**: [devenbhimani@gmail.com](mailto:devenbhimani@gmail.com)
+* **Issues**: Report bugs or suggestions on the GitHub Issues page.
 
+## ☕ Support the Project
+
+If you find this PCF control helpful and want to support ongoing development:
+
+[![Buy Me a Coffee](https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png)](https://www.buymeacoffee.com/devenbhimani)
+
+Every coffee helps keep this project improving 🚀
