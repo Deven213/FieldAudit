@@ -9,6 +9,7 @@ import { Spinner, SpinnerSize } from "@fluentui/react/lib/Spinner";
 import { Separator } from "@fluentui/react/lib/Separator";
 import { Callout, DirectionalHint } from "@fluentui/react/lib/Callout";
 import { IconButton } from "@fluentui/react/lib/Button";
+import { ContextualMenu, IContextualMenuItem, DirectionalHint as MenuDirectionalHint } from "@fluentui/react/lib/ContextualMenu";
 
 
 export interface IHistoryTooltipProps {
@@ -36,17 +37,123 @@ interface IOptionMetadata {
     Type?: string;
 }
 
-const stackTokens: IStackTokens = { childrenGap: 10 };
+const stackTokens: IStackTokens = { childrenGap: 5 };
 const tooltipStackStyles: IStackStyles = {
     root: {
-        padding: "15px",
-        maxWidth: "350px",
+        padding: "8px",
+        maxWidth: "300px",
         background: "rgba(255, 255, 255, 0.95)",
         backdropFilter: "blur(10px)",
         borderRadius: "8px",
         boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
         border: "1px solid #edebe9"
     }
+};
+
+
+
+const TimestampToggler: React.FunctionComponent<{ dateStr: string }> = ({ dateStr }) => {
+    const [timeFormat, setTimeFormat] = React.useState<'local' | 'utc'>('local');
+    const [showMenu, setShowMenu] = React.useState(false);
+    const linkRef = React.useRef<HTMLSpanElement>(null);
+
+    const date = new Date(dateStr);
+    const localString = date.toLocaleString(); // e.g. "10/2/2026, 4:03:22 PM"
+
+    const amPmRegex = /^(.*)\s(AM|PM)$/i;
+    const match = localString.match(amPmRegex);
+
+    const onMenuDismiss = () => setShowMenu(false);
+
+    const menuStyles = {
+        root: { minWidth: 120 },
+        subComponentStyles: {
+            menuItem: {
+                root: { height: 32, minHeight: 32, lineHeight: 32 },
+                linkContent: { height: 32, lineHeight: 32, padding: "0 10px" },
+                icon: { fontSize: 12, lineHeight: 32, padding: 0 },
+                label: { fontSize: 13, lineHeight: 32, margin: 0 }
+            }
+        }
+    };
+
+    const menuItems: IContextualMenuItem[] = [
+        {
+            key: 'local',
+            text: 'Local Time',
+            iconProps: { iconName: 'Clock' },
+            onClick: () => setTimeFormat('local'),
+            checked: timeFormat === 'local',
+            canCheck: true,
+        },
+        {
+            key: 'utc',
+            text: 'UTC Time',
+            iconProps: { iconName: 'World' },
+            onClick: () => setTimeFormat('utc'),
+            checked: timeFormat === 'utc',
+            canCheck: true,
+        }
+    ];
+
+    if (timeFormat === 'utc') {
+        const utcTime = `${date.getUTCHours().toString().padStart(2, '0')}:${date.getUTCMinutes().toString().padStart(2, '0')}:${date.getUTCSeconds().toString().padStart(2, '0')} UTC`;
+        const localDatePart = date.toLocaleDateString();
+
+        return (
+            <span>
+                {localDatePart}, {utcTime.replace(" UTC", "")}{" "}
+                <span
+                    ref={linkRef}
+                    style={{ cursor: "pointer", color: "#0078d4", fontWeight: 600, textDecoration: "underline", display: "inline-flex", alignItems: "center" }}
+                    onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
+                >
+                    UTC
+                    <Icon iconName="ChevronDown" style={{ fontSize: 10, marginLeft: 2 }} />
+                </span>
+                {showMenu && (
+                    <ContextualMenu
+                        items={menuItems}
+                        target={linkRef}
+                        onDismiss={onMenuDismiss}
+                        directionalHint={MenuDirectionalHint.bottomLeftEdge}
+                        styles={menuStyles}
+                    />
+                )}
+            </span>
+        );
+    }
+
+    if (match) {
+        // match[1] is "10/2/2026, 4:03:22"
+        // match[2] is "PM"
+        return (
+            <span>
+                {match[1]}{" "}
+                <span
+                    ref={linkRef}
+                    style={{ cursor: "pointer", color: "#0078d4", fontWeight: 600, textDecoration: "underline", display: "inline-flex", alignItems: "center" }}
+                    onClick={(e) => { e.stopPropagation(); setShowMenu(!showMenu); }}
+                >
+                    {match[2].toUpperCase()}
+                    <Icon iconName="ChevronDown" style={{ fontSize: 10, marginLeft: 2 }} />
+                </span>
+                {showMenu && (
+                    <ContextualMenu
+                        items={menuItems}
+                        target={linkRef}
+                        onDismiss={onMenuDismiss}
+                        directionalHint={MenuDirectionalHint.bottomLeftEdge}
+                        styles={menuStyles}
+                    />
+                )}
+            </span>
+        );
+    }
+
+    // Fallback if no AM/PM found (e.g. 24h locale), allow clicking the whole string to switch?
+    // Or just render as is for safety.
+    return <span>{localString}</span>;
 };
 
 export const HistoryTooltip: React.FunctionComponent<IHistoryTooltipProps> = (props) => {
@@ -86,7 +193,7 @@ export const HistoryTooltip: React.FunctionComponent<IHistoryTooltipProps> = (pr
             const filteredRecords: IAuditRecord[] = [];
 
             for (const e of result.entities) {
-                if (filteredRecords.length >= 5) break;
+                if (filteredRecords.length >= 20) break;
 
                 let oldValue: string | undefined;
                 let newValue: string | undefined;
@@ -222,46 +329,64 @@ export const HistoryTooltip: React.FunctionComponent<IHistoryTooltipProps> = (pr
                     />
                 </Stack>
                 <Separator />
-                <Stack tokens={{ childrenGap: 15 }}>
-                    {history.map((h) => (
-                        <ActivityItem
-                            key={h.auditId}
-                            activityDescription={[
-                                <div key={1} style={{ color: "#323130" }}>
-                                    <strong style={{ color: "#605e5c" }}>Changed by:</strong>{" "}
-                                    <span style={{ fontWeight: 600 }}>{h.userid}</span>
-                                </div>,
-                                <div key={2} style={{ color: "#323130" }}>
-                                    <strong style={{ color: "#605e5c" }}>Event:</strong>{" "}
-                                    <span
+                <Stack tokens={{ childrenGap: 15 }} styles={{ root: { maxHeight: "450px", overflowY: "auto", overflowX: "hidden", paddingRight: "4px" } }}>
+                    {history.map((h, index) => (
+                        <React.Fragment key={h.auditId}>
+                            <ActivityItem
+                                activityDescription={[
+                                    <div key={1} style={{ color: "#323130", fontSize: "13px" }}>
+                                        <span style={{ fontWeight: 600 }}>{h.userid}</span>
+                                        <span style={{ color: "#605e5c", margin: "0 4px" }}>&bull;</span>
+                                        <span
+                                            style={{
+                                                fontWeight: 600,
+                                                color: h.operation === "Created" ? "#107c10" : "#0078d4"
+                                            }}
+                                        >
+                                            {h.operation}
+                                        </span>
+                                    </div>,
+                                    <div key={2} style={{ color: "#605e5c", fontSize: "11px", marginTop: "1px" }}>
+                                        <TimestampToggler dateStr={h.createdon} />
+                                    </div>
+                                ]}
+                                activityIcon={
+                                    <div
                                         style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
                                             fontWeight: 600,
-                                            color: h.operation === "Created" ? "#107c10" : "#0078d4"
+                                            fontSize: "10px",
+                                            width: "20px",
+                                            height: "20px",
+                                            borderRadius: "50%",
+                                            background: h.operation === "Created" ? "#107c10" : "#0078d4",
+                                            color: "#ffffff",
+                                            boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
                                         }}
                                     >
-                                        {h.operation}
-                                    </span>
-                                </div>,
-                                <div key={3} style={{ color: "#605e5c", fontSize: "12px" }}>
-                                    <strong>Changed On:</strong>{" "}
-                                    {new Date(h.createdon).toLocaleString()}
-                                </div>
-                            ]}
-                            activityIcon={<Icon iconName="Edit" style={{ color: "#0078d4" }} />}
+                                        {h.operation === "Created" ? "C" : "U"}
+                                    </div>
+                                }
 
-                            comments={
-                                <Stack tokens={{ childrenGap: 5 }} style={{ marginTop: 4 }}>
-                                    <Stack horizontal tokens={{ childrenGap: 5 }}>
-                                        <Text variant="small" style={{ fontWeight: 600, color: "#a4262c" }}>Old Value:</Text>
-                                        <Text variant="small" style={{ fontStyle: "italic", userSelect: "text" }}>{h.oldValue}</Text>
+                                comments={
+                                    <Stack tokens={{ childrenGap: 2 }} style={{ marginTop: 2 }}>
+                                        <Stack horizontal tokens={{ childrenGap: 5 }} verticalAlign="center">
+                                            <Text variant="small" style={{ fontWeight: 600, color: "#a4262c", whiteSpace: "nowrap" }}>Old Value:</Text>
+                                            <Text variant="small" style={{ fontStyle: "italic", userSelect: "text", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "160px", display: "block" }} title={h.oldValue || ""}>{h.oldValue}</Text>
+                                        </Stack>
+                                        <Stack horizontal tokens={{ childrenGap: 5 }} verticalAlign="center">
+                                            <Text variant="small" style={{ fontWeight: 600, color: "#107c10", whiteSpace: "nowrap" }}>New Value:</Text>
+                                            <Text variant="small" style={{ fontStyle: "italic", userSelect: "text", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "160px", display: "block" }} title={h.newValue || ""}>{h.newValue}</Text>
+                                        </Stack>
                                     </Stack>
-                                    <Stack horizontal tokens={{ childrenGap: 5 }}>
-                                        <Text variant="small" style={{ fontWeight: 600, color: "#107c10" }}>New Value:</Text>
-                                        <Text variant="small" style={{ fontStyle: "italic", userSelect: "text" }}>{h.newValue}</Text>
-                                    </Stack>
-                                </Stack>
-                            }
-                        />
+                                }
+                            />
+                            {index < history.length - 1 && (
+                                <Separator styles={{ root: { padding: 0 } }} />
+                            )}
+                        </React.Fragment>
                     ))}
                 </Stack>
                 <Separator />
