@@ -2,18 +2,22 @@
 <manifest>
   <control namespace="Deven.Pcf.FieldAudit"
            constructor="FieldAuditTrail"
-           version="1.0.1"
+           version="1.0.3"
            display-name-key="FieldAuditTrail"
            description-key="FieldAuditTrail description"
            control-type="standard">
 
     <external-service-usage enabled="false" />
 
+    <type-group name="FieldTypes">
+      <type>SingleLine.Text</type>
+    </type-group>
+
     <!-- INPUT (bound field value) -->
     <property name="value"
               display-name-key="Field Value"
               description-key="The field to display and track history for"
-              of-type="SingleLine.Text"
+              of-type-group="FieldTypes"
               usage="bound"
               required="true" />
 

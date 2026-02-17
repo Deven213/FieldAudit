@@ -14,9 +14,9 @@ import { ContextualMenu, IContextualMenuItem, DirectionalHint as MenuDirectional
 
 export interface IHistoryTooltipProps {
     context: ComponentFramework.Context<IInputs>;
-    value: string | null;
+    value: string | ComponentFramework.LookupValue[] | null;
     fieldName: string;
-    onChange: (newValue: string | undefined) => void;
+    onChange: (newValue: string | ComponentFramework.LookupValue[] | undefined | null) => void;
 }
 
 interface IAuditRecord {
@@ -51,6 +51,44 @@ const tooltipStackStyles: IStackStyles = {
 };
 
 
+
+const CopyButton: React.FunctionComponent<{ text: string }> = ({ text }) => {
+    const [copied, setCopied] = React.useState(false);
+
+    const onCopy = (e: React.MouseEvent<unknown>) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <IconButton
+            iconProps={{ iconName: copied ? "CheckMark" : "Copy" }}
+            title={copied ? "Copied!" : "Copy"}
+            onClick={onCopy}
+            styles={{
+                root: {
+                    height: 24,
+                    width: 24,
+                    marginLeft: 4,
+                    color: copied ? "#107c10" : "#a19f9d", // Green when copied, explicit gray otherwise
+                    flexShrink: 0
+                },
+                rootHovered: {
+                    backgroundColor: "transparent", // No square background on hover
+                    color: copied ? "#107c10" : "#0078d4" // Blue on hover
+                },
+                rootPressed: {
+                    backgroundColor: "transparent",
+                },
+                icon: {
+                    fontSize: 12 // Slightly larger readable icon
+                }
+            }}
+        />
+    );
+};
 
 const TimestampToggler: React.FunctionComponent<{ dateStr: string }> = ({ dateStr }) => {
     const [timeFormat, setTimeFormat] = React.useState<'local' | 'utc'>('local');
@@ -111,6 +149,7 @@ const TimestampToggler: React.FunctionComponent<{ dateStr: string }> = ({ dateSt
                     UTC
                     <Icon iconName="ChevronDown" style={{ fontSize: 10, marginLeft: 2 }} />
                 </span>
+                <CopyButton text={`${localDatePart}, ${utcTime.replace(" UTC", "")} UTC`} />
                 {showMenu && (
                     <ContextualMenu
                         items={menuItems}
@@ -138,6 +177,7 @@ const TimestampToggler: React.FunctionComponent<{ dateStr: string }> = ({ dateSt
                     {match[2].toUpperCase()}
                     <Icon iconName="ChevronDown" style={{ fontSize: 10, marginLeft: 2 }} />
                 </span>
+                <CopyButton text={`${match[1]} ${match[2].toUpperCase()}`} />
                 {showMenu && (
                     <ContextualMenu
                         items={menuItems}
@@ -153,7 +193,21 @@ const TimestampToggler: React.FunctionComponent<{ dateStr: string }> = ({ dateSt
 
     // Fallback if no AM/PM found (e.g. 24h locale), allow clicking the whole string to switch?
     // Or just render as is for safety.
-    return <span>{localString}</span>;
+    return (
+        <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+            {localString}
+            <CopyButton text={localString} />
+        </span>
+    );
+};
+
+// Helper to extract display text
+const getDisplayValue = (val: string | ComponentFramework.LookupValue[] | null | undefined): string => {
+    if (!val) return "";
+    if (Array.isArray(val)) {
+        return val[0]?.name || "";
+    }
+    return String(val);
 };
 
 export const HistoryTooltip: React.FunctionComponent<IHistoryTooltipProps> = (props) => {
@@ -164,9 +218,25 @@ export const HistoryTooltip: React.FunctionComponent<IHistoryTooltipProps> = (pr
     const [error, setError] = React.useState<string | null>(null);
     const [hasFetched, setHasFetched] = React.useState(false);
     const [isCalloutVisible, setIsCalloutVisible] = React.useState(false);
+
     const iconRef = React.useRef<HTMLDivElement>(null);
 
+    // ... (keep fetchHistory and TimestampToggler logic unchanged, but for brevity I will omit re-pasting the big fetchHistory function if I can target around it, but I must replace the rendering logic)
+
     const fetchHistory = React.useCallback(async (force = false) => {
+        // ... (existing history fetch logic - I will preserve it in the final output by assuming the user wants it kept. I'll just paste the existing block or assume it's there? No, I must provide full replacement chunk for the area I touch)
+        // Since I need to change the render significantly, I will keep fetchHistory but I will condense the replacement to avoid copy-pasting 200 lines of unchanged fetchHistory code if possible.
+        // But I need to change the 'return' statement.
+
+        // Let's rely on the fact that I can use the existing fetchHistory if I don't delete it.
+        // Wait, I can't partial replace properly if I don't include context.
+        // I will just replace the render part and the new state hooks.
+        // Actually, let's just re-implement the fetchLookupResults and the render.
+
+        // I'll leave fetchHistory alone by starting replacement AFTER it.
+        // But I need to add state hooks BEFORE it.
+        // State hooks are at line 225.
+        // Render is at line 504.
 
         let lastKnownValue: string | undefined = undefined;
 
@@ -204,7 +274,7 @@ export const HistoryTooltip: React.FunctionComponent<IHistoryTooltipProps> = (pr
                 const rawChangeData = e["changedata"];
 
                 if (isCreate && value !== null && value !== undefined) {
-                    lastKnownValue = value;
+                    lastKnownValue = getDisplayValue(value);
                 }
 
                 if (rawChangeData) {
@@ -329,12 +399,12 @@ export const HistoryTooltip: React.FunctionComponent<IHistoryTooltipProps> = (pr
                     />
                 </Stack>
                 <Separator />
-                <Stack tokens={{ childrenGap: 15 }} styles={{ root: { maxHeight: "450px", overflowY: "auto", overflowX: "hidden", paddingRight: "4px" } }}>
+                <Stack tokens={{ childrenGap: 0 }} styles={{ root: { maxHeight: "450px", overflowY: "auto", overflowX: "hidden", paddingRight: "4px" } }}>
                     {history.map((h, index) => (
                         <React.Fragment key={h.auditId}>
                             <ActivityItem
                                 activityDescription={[
-                                    <div key={1} style={{ color: "#323130", fontSize: "13px" }}>
+                                    <div key={1} style={{ color: "#323130", fontSize: "13px", display: 'flex', alignItems: 'center' }}>
                                         <span style={{ fontWeight: 600 }}>{h.userid}</span>
                                         <span style={{ color: "#605e5c", margin: "0 4px" }}>&bull;</span>
                                         <span
@@ -345,6 +415,7 @@ export const HistoryTooltip: React.FunctionComponent<IHistoryTooltipProps> = (pr
                                         >
                                             {h.operation}
                                         </span>
+                                        <CopyButton text={`${h.userid} • ${h.operation}`} />
                                     </div>,
                                     <div key={2} style={{ color: "#605e5c", fontSize: "11px", marginTop: "1px" }}>
                                         <TimestampToggler dateStr={h.createdon} />
@@ -373,18 +444,20 @@ export const HistoryTooltip: React.FunctionComponent<IHistoryTooltipProps> = (pr
                                 comments={
                                     <Stack tokens={{ childrenGap: 2 }} style={{ marginTop: 2 }}>
                                         <Stack horizontal tokens={{ childrenGap: 5 }} verticalAlign="center">
-                                            <Text variant="small" style={{ fontWeight: 600, color: "#a4262c", whiteSpace: "nowrap" }}>Old Value:</Text>
-                                            <Text variant="small" style={{ fontStyle: "italic", userSelect: "text", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "160px", display: "block" }} title={h.oldValue || ""}>{h.oldValue}</Text>
+                                            <Text variant="small" style={{ fontWeight: 600, color: "#a4262c", whiteSpace: "nowrap", flexShrink: 0 }}>Old Value:</Text>
+                                            <Text variant="small" style={{ fontStyle: "italic", userSelect: "text", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "130px", display: "block" }} title={h.oldValue || ""}>{h.oldValue}</Text>
+                                            <CopyButton text={h.oldValue || ""} />
                                         </Stack>
                                         <Stack horizontal tokens={{ childrenGap: 5 }} verticalAlign="center">
-                                            <Text variant="small" style={{ fontWeight: 600, color: "#107c10", whiteSpace: "nowrap" }}>New Value:</Text>
-                                            <Text variant="small" style={{ fontStyle: "italic", userSelect: "text", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "160px", display: "block" }} title={h.newValue || ""}>{h.newValue}</Text>
+                                            <Text variant="small" style={{ fontWeight: 600, color: "#107c10", whiteSpace: "nowrap", flexShrink: 0 }}>New Value:</Text>
+                                            <Text variant="small" style={{ fontStyle: "italic", userSelect: "text", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "130px", display: "block" }} title={h.newValue || ""}>{h.newValue}</Text>
+                                            <CopyButton text={h.newValue || ""} />
                                         </Stack>
                                     </Stack>
                                 }
                             />
                             {index < history.length - 1 && (
-                                <Separator styles={{ root: { padding: 0 } }} />
+                                <Separator styles={{ root: { padding: 0, height: 1, margin: "8px 0" } }} />
                             )}
                         </React.Fragment>
                     ))}
@@ -397,10 +470,10 @@ export const HistoryTooltip: React.FunctionComponent<IHistoryTooltipProps> = (pr
         );
     };
 
-    const [localValue, setLocalValue] = React.useState(value || "");
+    const [localValue, setLocalValue] = React.useState(getDisplayValue(value));
 
     React.useEffect(() => {
-        setLocalValue(value || "");
+        setLocalValue(getDisplayValue(value));
     }, [value]);
 
     return (
@@ -409,7 +482,6 @@ export const HistoryTooltip: React.FunctionComponent<IHistoryTooltipProps> = (pr
                 value={localValue}
                 onChange={(e, v) => setLocalValue(v || "")}
                 onBlur={() => onChange(localValue)}
-                onKeyDown={(e) => e.stopPropagation()}
                 borderless
                 autoComplete="off"
                 styles={{
@@ -418,12 +490,17 @@ export const HistoryTooltip: React.FunctionComponent<IHistoryTooltipProps> = (pr
                         background: "transparent",
                         borderBottom: "1px solid #deecf9",
                         selectors: {
-                            ":after": { borderBottomColor: "#0078d4" }
+                            ":after": { borderBottomColor: "#0078d4" },
+                            ":hover": { borderColor: "#c7c7c7" }
                         }
                     },
-                    field: { fontSize: "14px", color: "#323130" }
+                    field: {
+                        fontSize: "14px",
+                        color: "#323130"
+                    }
                 }}
             />
+
             <div
                 ref={iconRef}
                 onClick={() => {

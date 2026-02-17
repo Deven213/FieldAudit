@@ -40,8 +40,8 @@ export class FieldAuditTrail implements ComponentFramework.StandardControl<IInpu
             context: context,
             value: context.parameters.value.raw || "",
             fieldName: context.parameters.value.attributes?.LogicalName || "unknown",
-            onChange: (newValue: string | undefined) => {
-                context.parameters.value.raw = newValue || null;
+            onChange: (newValue: string | ComponentFramework.LookupValue[] | undefined | null) => {
+                ((context.parameters.value as unknown) as { raw: string | ComponentFramework.LookupValue[] | null }).raw = newValue || null;
                 this._notifyOutputChanged();
             }
         };
